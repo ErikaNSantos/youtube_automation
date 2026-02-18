@@ -55,7 +55,7 @@ class LofiEngine:
             'name': 'Ambient Lo-Fi',
             'description': 'Atmosférico, foco em texturas e pads',
             'bpm_range': (60, 70),
-            'key_preferences': ['Am', 'Em', 'Dm'],
+            'key_preferences': ['A', 'E', 'D'],
             'mode': 'minor',
             'measures': 24,
             'has_drums': False,
