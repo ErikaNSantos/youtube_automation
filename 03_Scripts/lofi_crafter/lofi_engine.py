@@ -192,7 +192,7 @@ class LofiEngine:
             drum_gen = DrumGenerator(style=style, bpm=bpm)
             drum_track = drum_gen.generate_drum_track(mid, measures=measures)
             mid.tracks.append(drum_track)
-            print(f"  ✓ Bateria adicionada com swing: {drum_gen.swing_amount:.2f}")
+            print(f"  ✓ Bateria adicionada com sincronia de grade")
         
         # Salva arquivo
         mid.save(output_path)
