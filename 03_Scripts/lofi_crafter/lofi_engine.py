@@ -165,27 +165,20 @@ class LofiEngine:
         tempo_track.append(MetaMessage('time_signature', numerator=4, denominator=4, 
                                        clocks_per_click=24, notated_32nd_notes_per_beat=8, time=0))
         
-        # Gera harmonia e melodia
+        # Gera harmonia, melodia, baixo e pads
         print(f"Gerando {preset['name']} - Key: {key} {mode}, BPM: {bpm}, Measures: {measures}")
         
-        generator = LofiMidiGenerator(style=style, key=key, mode=mode)
-        generator.bpm = bpm  # Sobrescreve BPM
+        generator = LofiMidiGenerator(key=key, mode=mode)
+        generator.bpm = bpm
         
-        # Track de harmonia
-        harmony_track = MidiTrack()
-        mid.tracks.append(harmony_track)
-        harmony_track.append(MetaMessage('track_name', name='Harmony', time=0))
-        harmony_track.append(Message('program_change', program=0, time=0, channel=0))  # Piano
+        # Obter progressão melancólica
+        prog = random.choice(generator.MELANCHOLIC_PROGRESSIONS)
         
-        generator.generate_harmony_track(mid, harmony_track, measures=measures)
-        
-        # Track de melodia
-        melody_track = MidiTrack()
-        mid.tracks.append(melody_track)
-        melody_track.append(MetaMessage('track_name', name='Melody', time=0))
-        melody_track.append(Message('program_change', program=1, time=0, channel=1))  # Piano brilhante
-        
-        generator.generate_melody_track(mid, melody_track, measures=measures)
+        # Adicionar as 4 tracks principais (Piano, Bass, Pad, Melody)
+        mid.tracks.append(generator.generate_harmony_track(mid, prog, measures))
+        mid.tracks.append(generator.generate_bass_track(mid, prog, measures))
+        mid.tracks.append(generator.generate_pad_track(mid, prog, measures))
+        mid.tracks.append(generator.generate_melody_track(mid, prog, measures))
         
         # Adiciona bateria se necessário
         if include_drums:

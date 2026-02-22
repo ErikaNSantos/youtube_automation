@@ -1,6 +1,6 @@
 """
-Gerador de Bateria Lo-Fi em formato MIDI - Versão Sincronizada
-Garante que a bateria esteja perfeitamente alinhada à grade de ticks.
+Gerador de Bateria Lo-Fi - Versão Humanizada e Orgânica
+Implementa Swing, Ghost Notes e variações de Velocity para bateria acústica.
 """
 
 import random
@@ -12,12 +12,22 @@ class DrumGenerator:
     SNARE = 38
     RIMSHOT = 37
     CLOSED_HH = 42
+    OPEN_HH = 46
 
     def __init__(self, style, bpm):
         self.style = style
         self.bpm = bpm
+        # Swing agressivo de tercina (58-62% é o 'sweet spot' do Lo-Fi)
+        self.swing = random.uniform(0.58, 0.62)
 
-    def generate_drum_track(self, mid, measures: int = 8) -> MidiTrack:
+    def _humanize_velocity(self, base_vel: int, variance: int = 20) -> int:
+        return max(20, min(120, base_vel + random.randint(-variance, variance)))
+
+    def _humanize_time(self, variance: int = 15) -> int:
+        """Micro-atrasos para o 'lazy groove'"""
+        return random.randint(-variance, variance)
+
+    def generate_drum_track(self, mid, measures: int = 16) -> MidiTrack:
         track = MidiTrack()
         ticks_per_beat = mid.ticks_per_beat
         ticks_per_measure = ticks_per_beat * 4
@@ -26,29 +36,37 @@ class DrumGenerator:
         for m in range(measures):
             m_offset = m * ticks_per_measure
             
-            # Kick nos tempos 1 e 3 (grade cravada)
-            for b in [0, 2]:
-                t = m_offset + b * ticks_per_beat
-                events.append((t, 'on', self.KICK, 80))
+            # 1. Kick (Bumbo) - Mais 'solto'
+            for b in [0, 2.5]: # Kick no 1 e sincopado no 'e' do 3
+                if b == 2.5 and random.random() < 0.4: continue # Ocasionalmente pula o sincopado
+                t = int(m_offset + b * ticks_per_beat) + self._humanize_time(25)
+                events.append((max(0, t), 'on', self.KICK, self._humanize_velocity(85, 10)))
                 events.append((t + 100, 'off', self.KICK, 0))
             
-            # Snare nos tempos 2 e 4 (grade cravada)
+            # 2. Snare/Rimshot - 'Atrás do tempo' (laid back)
             for b in [1, 3]:
-                t = m_offset + b * ticks_per_beat
-                events.append((t, 'on', self.SNARE, 70))
-                events.append((t + 100, 'off', self.SNARE, 0))
+                # Rimshot no 2, Snare no 4 (ou vice-versa)
+                drum = self.RIMSHOT if b == 1 else self.SNARE
+                t = int(m_offset + b * ticks_per_beat) + random.randint(15, 45) # Sempre um pouco atrasado
+                events.append((t, 'on', drum, self._humanize_velocity(75, 15)))
+                events.append((t + 120, 'off', drum, 0))
+                
+                # Ghost notes (Notas fantasma) muito leves
+                if random.random() < 0.3:
+                    ghost_t = t + int(ticks_per_beat * 0.5)
+                    events.append((ghost_t, 'on', self.SNARE, self._humanize_velocity(25, 5)))
+                    events.append((ghost_t + 80, 'off', self.SNARE, 0))
             
-            # Hi-hat em colcheias (swing de tercina)
-            swing = 0.6 # 60% swing
+            # 3. Hi-hat (Contratempo) - O coração do Swing
             for b in range(4):
-                # Cabeça do tempo
-                t1 = m_offset + b * ticks_per_beat
-                events.append((t1, 'on', self.CLOSED_HH, 60))
+                # Cabeça do tempo (mais forte)
+                t1 = m_offset + b * ticks_per_beat + self._humanize_time(10)
+                events.append((max(0, t1), 'on', self.CLOSED_HH, self._humanize_velocity(65, 12)))
                 events.append((t1 + 80, 'off', self.CLOSED_HH, 0))
                 
-                # Contratempo com swing
-                t2 = m_offset + b * ticks_per_beat + int(ticks_per_beat * swing)
-                events.append((t2, 'on', self.CLOSED_HH, 45))
+                # Contratempo com Swing (mais fraco)
+                t2 = m_offset + b * ticks_per_beat + int(ticks_per_beat * self.swing) + self._humanize_time(10)
+                events.append((t2, 'on', self.CLOSED_HH, self._humanize_velocity(40, 10)))
                 events.append((t2 + 80, 'off', self.CLOSED_HH, 0))
 
         events.sort()
