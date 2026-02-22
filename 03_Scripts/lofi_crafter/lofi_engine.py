@@ -79,6 +79,26 @@ class LofiEngine:
             'has_drums': True,
             'instruments': ['piano', 'bass', 'guitar', 'flute']
         },
+        LofiStyle.ORIENTAL: {
+            'name': 'Oriental Lo-Fi',
+            'description': 'Escalas pentatônicas com Koto e Shakuhachi',
+            'bpm_range': (65, 75),
+            'key_preferences': ['Am', 'Dm', 'Em'],
+            'mode': 'pentatonic_minor',
+            'measures': 16,
+            'has_drums': True,
+            'instruments': ['piano', 'bass', 'koto', 'shakuhachi']
+        },
+        LofiStyle.NORDESTE: {
+            'name': 'Nordeste Lo-Fi (Baiao-Hop)',
+            'description': 'Ritmos nordestinos com Sanfona e escala Lídio b7',
+            'bpm_range': (80, 95),
+            'key_preferences': ['G', 'D', 'A'],
+            'mode': 'lydian_b7',
+            'measures': 16,
+            'has_drums': True,
+            'instruments': ['piano', 'bass', 'accordion']
+        },
     }
     
     def __init__(self, output_dir: str = './output'):
