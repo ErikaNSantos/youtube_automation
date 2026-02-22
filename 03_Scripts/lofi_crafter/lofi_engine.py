@@ -67,6 +67,7 @@ class LofiEngine:
             'mode': 'minor',
             'measures': 16,
             'has_drums': True,
+            'instruments': ['piano', 'bass', 'pad', 'strings', 'melody']
         },
         LofiStyle.NOSTALGIC: {
             'name': 'Nostalgic Lo-Fi',
@@ -76,6 +77,7 @@ class LofiEngine:
             'mode': 'minor',
             'measures': 16,
             'has_drums': True,
+            'instruments': ['piano', 'bass', 'guitar', 'flute']
         },
     }
     
@@ -141,10 +143,9 @@ class LofiEngine:
         generator.bpm = bpm
         prog = random.choice(generator.MELANCHOLIC_PROGRESSIONS)
         
-        mid.tracks.append(generator.generate_harmony_track(mid, prog, measures))
-        mid.tracks.append(generator.generate_bass_track(mid, prog, measures))
-        mid.tracks.append(generator.generate_pad_track(mid, prog, measures))
-        mid.tracks.append(generator.generate_melody_track(mid, prog, measures))
+        # Adicionar as tracks baseadas no preset ou padrão
+        instruments = preset.get('instruments', ['piano', 'bass', 'pad', 'melody'])
+        generator.generate_full_ensemble(mid, prog, measures, instruments)
         
         if include_drums:
             drum_gen = DrumGenerator(style=style, bpm=bpm)
