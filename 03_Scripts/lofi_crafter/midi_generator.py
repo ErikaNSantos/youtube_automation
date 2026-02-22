@@ -84,7 +84,7 @@ class LofiMidiGenerator:
             for note in chord:
                 h_on = start_tick + self._humanize_time(40)
                 h_off = start_tick + ticks_per_measure - 60
-                events.append((max(0, h_on), 'on', note, self._humanize_velocity(55, 15)))
+                events.append((max(0, h_on), 'on', note, self._humanize_velocity(45, 10))) # Reduzido para dar espaço ao Bass/Kick
                 events.append((h_off, 'off', note, 0))
 
         events.sort()

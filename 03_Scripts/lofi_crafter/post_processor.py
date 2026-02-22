@@ -1,6 +1,6 @@
 """
-Pós-Processador de Áudio Lo-Fi
-Aplica filtros, camadas de ruído (chuva/vinil) e efeitos de masterização.
+Pós-Processador de Áudio Lo-Fi - Versão Mixagem Limpa
+Aplica EQ corretivo (High-Pass/Low-Pass) e Gain Staging para texturas "fantasma".
 """
 
 import os
@@ -10,76 +10,64 @@ from pydub.effects import normalize
 
 class PostProcessor:
     def __init__(self, rain_dir=None, vinyl_dir=None):
-        # Caminhos padrão baseados na estrutura do repositório
         base_dir = "/home/ubuntu/youtube_automation/03_Scripts/lofi_crafter/client/assets/samples/loops"
         self.rain_dir = rain_dir if rain_dir else os.path.join(base_dir, "rain")
         self.vinyl_dir = vinyl_dir if vinyl_dir else os.path.join(base_dir, "vinyl")
 
-    def apply_lofi_filter(self, audio):
+    def apply_eq_filters(self, audio, low_pass=5000, high_pass=150):
         """
-        Aplica filtro Passa-Baixa (Low-pass) para abafar o som (Lo-Fi vibe).
-        Frequência de corte recomendada: 4000Hz
+        Aplica filtros de EQ para clareza:
+        - Low-pass: Corta agudos extremos (vibe nostálgica).
+        - High-pass: Limpa o 'lodo' dos graves.
         """
-        print("Aplicando filtro Low-pass (4000Hz)...")
-        return audio.low_pass_filter(4000)
+        print(f"Aplicando EQ: High-pass {high_pass}Hz | Low-pass {low_pass}Hz...")
+        audio = audio.high_pass_filter(high_pass)
+        audio = audio.low_pass_filter(low_pass)
+        return audio
 
-    def add_texture_layer(self, audio, layer_type="rain", volume_reduction=-15):
+    def add_texture_layer(self, audio, layer_type="rain", volume_reduction=-22):
         """
-        Adiciona uma camada de textura (chuva ou vinil) em loop.
+        Adiciona camadas de textura 'fantasma' com EQ corretivo.
+        Corta tudo abaixo de 300Hz nas texturas para evitar colisão de graves.
         """
         target_dir = self.rain_dir if layer_type == "rain" else self.vinyl_dir
         if not os.path.exists(target_dir):
-            print(f"⚠ Diretório de {layer_type} não encontrado em {target_dir}. Pulando camada.")
             return audio
 
-        # Escolhe um arquivo aleatório do diretório
         files = [f for f in os.listdir(target_dir) if f.endswith(".mp3")]
         if not files:
             return audio
             
         layer_file = os.path.join(target_dir, random.choice(files))
-        print(f"Adicionando camada de {layer_type}: {os.path.basename(layer_file)}...")
+        print(f"Adicionando textura {layer_type} (Volume: {volume_reduction}dB)...")
         
         texture = AudioSegment.from_mp3(layer_file)
         
-        # Ajusta o volume da textura (precisa ser sutil)
+        # EQ Corretivo na Textura: Corta graves (300Hz) para não sujar o Bass/Kick
+        texture = texture.high_pass_filter(300)
+        
+        # Ganho sutil (Ghost Texture)
         texture = texture + volume_reduction
         
-        # Loop da textura para cobrir a duração do áudio principal
+        # Loop para cobrir o áudio
         loops = (len(audio) // len(texture)) + 1
-        texture_loop = texture * loops
-        texture_loop = texture_loop[:len(audio)] # Corta no tamanho exato
+        texture_loop = (texture * loops)[:len(audio)]
         
-        # Mistura os áudios (overlay)
         return audio.overlay(texture_loop)
 
     def process(self, input_wav, output_wav):
-        """
-        Pipeline completo de pós-produção.
-        """
-        print(f"Processando {input_wav}...")
-        
-        # Carrega o áudio principal
+        print(f"Iniciando Mixagem Lo-Fi: {input_wav}")
         audio = AudioSegment.from_wav(input_wav)
         
-        # 1. Filtro Lo-Fi (Passa-Baixa)
-        audio = self.apply_lofi_filter(audio)
+        # 1. EQ Corretivo no Mix Principal (Limpa o lodo abaixo de 100Hz e agudos acima de 5k)
+        audio = self.apply_eq_filters(audio, low_pass=5000, high_pass=100)
         
-        # 2. Adicionar Camada de Chuva
-        audio = self.add_texture_layer(audio, "rain", volume_reduction=-20)
+        # 2. Camadas Fantasma (Redução de volume agressiva: -22dB a -25dB)
+        audio = self.add_texture_layer(audio, "rain", volume_reduction=-25)
+        audio = self.add_texture_layer(audio, "vinyl", volume_reduction=-22)
         
-        # 3. Adicionar Camada de Vinil
-        audio = self.add_texture_layer(audio, "vinyl", volume_reduction=-18)
-        
-        # 4. Normalização Final (Mastering básico)
+        # 3. Normalização e Export
         audio = normalize(audio)
-        
-        # Exporta o resultado final
         audio.export(output_wav, format="wav")
-        print(f"✓ Pós-produção concluída: {output_wav}")
+        print(f"✓ Mixagem finalizada: {output_wav}")
         return output_wav
-
-if __name__ == "__main__":
-    # Teste de inicialização
-    processor = PostProcessor()
-    print(f"PostProcessor pronto. Rain: {processor.rain_dir}")
